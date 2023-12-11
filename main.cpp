@@ -13,18 +13,20 @@ const char *cubeSource = "/cube.obj";
 
 class MovingBall : public Object {
  private:
-    float MIN_VELOCITY = 0.001;
+    float MIN_VELOCITY = 0.01;
  public:
     Vec3 velocity;
     float bounciness = 1;
-    float friction = 0;
+    float friction = 2;
 
     void Update(float dt) override {
         transform->Translate(velocity * dt);
         // transform->Rotate(length(velocity) * dt / transform->GetScale().x / 2, direction);
-        velocity *= pow(1 - friction, dt);
         if (length(velocity) < MIN_VELOCITY) {
             velocity = Vec3(0, 0, 0);
+        } else {
+            // Can be dangerous
+            velocity -= glm::normalize(velocity) * friction * dt;
         }
     }
 
@@ -118,7 +120,7 @@ int main() {
     int ballsCount = 5;
 
     for (int i = 0; i < ballsCount; ++i) {
-        MovingBall *sphere = newBall(Vec3(i * 2 - 5, -12, -i), Vec3(3, 0, 1 + i),
+        MovingBall *sphere = newBall(Vec3(i * 2 - 5, -12, -i), Vec3(5, 0, 2 + 2 * i),
          shaderProgram, "/wall.png", "/wallspecular.png");
         balls.push_back(sphere);
         engine.AddObject<>(sphere);
