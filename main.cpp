@@ -125,7 +125,6 @@ int main() {
 
     for (int i = 0; i < ballsCount; ++i) {
         MovingBall *sphere = newBall(Vec3(i * 2 - 5, -12, -i), Vec3(3, 0, 1 + i),
-         shaderProgram, "/wall.png", "/wallspecular.png");
          shaderProgram, "/152.png", "/cat_specular.png");
         balls.push_back(sphere);
         engine.AddObject<>(sphere);
