@@ -85,24 +85,32 @@ class Cue : public Object {
 
     void Update(float dt) override {
         Ray ray = Ray(m_Camera->GetPosition(), m_Camera->GetPosition() + m_Camera->GetFront());// m_Camera->GetRayThroughScreenPoint({s_Input->MouseX(), s_Input->MouseY()});;
-        Transform *target = nullptr;
+        MovingBall *target = nullptr;
         float closest = std::numeric_limits<float>::max();
         for (int i = 0; i < m_Objects.size(); i++) {
             auto obj = m_Objects[i];
             auto hit = obj->collider->RaycastHit(*obj->transform, ray);
             if (hit && *hit < closest) {
-                target = obj->transform;
+                target = obj;
                 closest = *hit;
             }
         }
-        if (target != nullptr && s_Input->IsKeyPressed(Key::MouseLeft))
-            m_CurrentTarget = target;
+        if (s_Input->IsKeyPressed(Key::MouseLeft)) {
+            if (m_CurrentTarget != nullptr) {
+                Vec3 direction = m_CurrentTarget->transform->GetTranslation() - transform->GetTranslation();
+                direction.y = 0;
+                m_CurrentTarget->velocity += 2.f * direction;
+            }
+
+            if (m_CurrentTarget == nullptr && target != nullptr)
+                m_CurrentTarget = target;
+        }
 
         if (s_Input->IsKeyPressed(Key::MouseRight))
             m_CurrentTarget = nullptr;
 
         if (m_CurrentTarget != nullptr) {
-            Vec3 center = m_CurrentTarget->GetTranslation();
+            Vec3 center = m_CurrentTarget->transform->GetTranslation();
             Vec3 closest = ray.origin + glm::dot(center - ray.origin, ray.direction) * ray.direction;
             closest.y = center.y;
             Vec3 onCircle = center + glm::normalize(closest - center) * m_CueDistance;
@@ -116,7 +124,7 @@ class Cue : public Object {
 
  private:
     float m_CueDistance = 1.f;
-    Transform *m_CurrentTarget = nullptr;
+    MovingBall *m_CurrentTarget = nullptr;
     std::vector<MovingBall *> m_Objects;
     Camera *m_Camera;
 };
