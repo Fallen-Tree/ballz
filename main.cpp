@@ -1,4 +1,4 @@
-#include <math.h>
+#include<math.h>
 #include<iostream>
 
 #include "engine.hpp"
@@ -14,6 +14,7 @@ const char *cubeSource = "/cube.obj";
 class MovingBall : public Object {
  private:
     float MIN_VELOCITY = 0.001;
+
  public:
     Vec3 velocity;
     float bounciness = 1;
@@ -21,7 +22,12 @@ class MovingBall : public Object {
 
     void Update(float dt) override {
         transform->Translate(velocity * dt);
-        // transform->Rotate(length(velocity) * dt / transform->GetScale().x / 2, direction);
+        Vec3 rotationAxis = cross(normalize(velocity), Vec3(0, -1, 0));
+        float angle = length(velocity) * dt / transform->GetScale().x;
+        Mat4 rotation = transform->GetRotation();
+        transform->Rotate(inverse(rotation));
+        transform->Rotate(angle, rotationAxis);
+        transform->Rotate(rotation);
         velocity *= pow(1 - friction, dt);
         if (length(velocity) < MIN_VELOCITY) {
             velocity = Vec3(0, 0, 0);
@@ -31,7 +37,7 @@ class MovingBall : public Object {
     MovingBall(Vec3 position, ShaderProgram * shaderProgram,
      std::string diffuseSource, std::string specularSource = "") {
         this->renderData = new RenderData();
-        this->renderData->model = Model::GetSphere();
+        this->renderData->model = Model::loadFromFile("/shar_152.obj");  // Model::GetSphere();
         this->renderData->model->shader = shaderProgram;
 
         auto images = std::vector<std::string>();
@@ -120,6 +126,7 @@ int main() {
     for (int i = 0; i < ballsCount; ++i) {
         MovingBall *sphere = newBall(Vec3(i * 2 - 5, -12, -i), Vec3(3, 0, 1 + i),
          shaderProgram, "/wall.png", "/wallspecular.png");
+         shaderProgram, "/152.png", "/cat_specular.png");
         balls.push_back(sphere);
         engine.AddObject<>(sphere);
     }
