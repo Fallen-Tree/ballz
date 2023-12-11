@@ -66,12 +66,13 @@ class Cue : public Object {
      Cue(std::vector<MovingBall *> objects, Camera *camera, ShaderProgram *shader) {
         m_Objects = objects;
         m_Camera = camera;
+        float m_CueDistance = 8.f;
         renderData = new RenderData();
-        renderData->model = Model::loadFromFile("/kiy.obj");
+        renderData->model = Model::loadFromFile("/cue.obj");
         renderData->model->shader = shader;
         bindRenderData(renderData);
 
-        transform = new Transform(Vec3(0), Vec3(1), 0, Vec3(1));
+        transform = new Transform(Vec3(0), Vec3(8), 0, Vec3(1));
 
         auto imagesCue = std::vector<std::string>();
         imagesCue.push_back("/kiy.png");
