@@ -95,8 +95,11 @@ class Cue : public Object {
                 closest = *hit;
             }
         }
-        if (s_Input->IsKeyPressed(Key::MouseLeft))
+        if (target != nullptr && s_Input->IsKeyPressed(Key::MouseLeft))
             m_CurrentTarget = target;
+
+        if (s_Input->IsKeyPressed(Key::MouseRight))
+            m_CurrentTarget = nullptr;
 
         if (m_CurrentTarget != nullptr) {
             Vec3 center = m_CurrentTarget->GetTranslation();
