@@ -1,6 +1,7 @@
 #include<math.h>
 #include<iostream>
 
+#include "logger.hpp"
 #include "engine.hpp"
 
 static int SCR_HEIGHT = 600;
@@ -10,7 +11,6 @@ const char *vertexShaderSource = "/vertex/standart.vshader";
 const char *fragmentShaderSource = "/fragment/standart.fshader";
 
 const char *cubeSource = "/cube.obj";
-
 class MovingBall : public Object {
  private:
     float MIN_VELOCITY = 0.001;
@@ -60,6 +60,63 @@ class MovingBall : public Object {
         transform = new Transform(position, Vec3(1., 1., 1.), Mat4(1.0));
     }
 };
+
+class Cue : public Object {
+ public:
+     Cue(std::vector<MovingBall *> objects, Camera *camera, ShaderProgram *shader) {
+        m_Objects = objects;
+        m_Camera = camera;
+        renderData = new RenderData();
+        renderData->model = Model::loadFromFile("/kiy.obj");
+        renderData->model->shader = shader;
+        bindRenderData(renderData);
+
+        transform = new Transform(Vec3(0), Vec3(1), 0, Vec3(1));
+
+        auto imagesCue = std::vector<std::string>();
+        imagesCue.push_back("/kiy.png");
+        imagesCue.push_back("/kiy.png");
+        renderData->material = {
+            4.f,
+            Texture(imagesCue),
+        };
+     }
+
+    void Update(float dt) override {
+        Ray ray = Ray(m_Camera->GetPosition(), m_Camera->GetPosition() + m_Camera->GetFront());// m_Camera->GetRayThroughScreenPoint({s_Input->MouseX(), s_Input->MouseY()});;
+        Transform *target = nullptr;
+        float closest = std::numeric_limits<float>::max();
+        for (int i = 0; i < m_Objects.size(); i++) {
+            auto obj = m_Objects[i];
+            auto hit = obj->collider->RaycastHit(*obj->transform, ray);
+            if (hit && *hit < closest) {
+                target = obj->transform;
+                closest = *hit;
+            }
+        }
+        if (s_Input->IsKeyPressed(Key::MouseLeft))
+            m_CurrentTarget = target;
+
+        if (m_CurrentTarget != nullptr) {
+            Vec3 center = m_CurrentTarget->GetTranslation();
+            Vec3 closest = ray.origin + glm::dot(center - ray.origin, ray.direction) * ray.direction;
+            closest.y = center.y;
+            Vec3 onCircle = center + glm::normalize(closest - center) * m_CueDistance;
+            transform->SetTranslation(onCircle);
+
+            Vec3 toCenter = center - onCircle;
+            float angle = glm::acos(glm::dot(toCenter, ray.direction) / m_CueDistance);
+            transform->SetRotation(-glm::pi<float>()/2, glm::cross(Vec3{0.f, 1.f, 0.f}, toCenter));
+        }
+     }
+
+ private:
+    float m_CueDistance = 1.f;
+    Transform *m_CurrentTarget = nullptr;
+    std::vector<MovingBall *> m_Objects;
+    Camera *m_Camera;
+};
+
 
 class GameManager : public Object {
  public:
@@ -125,10 +182,12 @@ int main() {
 
     for (int i = 0; i < ballsCount; ++i) {
         MovingBall *sphere = newBall(Vec3(i * 2 - 5, -12, -i), Vec3(3, 0, 1 + i),
-         shaderProgram, "/152.png", "/cat_specular.png");
+         shaderProgram, "/152.png", "/Cat_specular.png");
         balls.push_back(sphere);
         engine.AddObject<>(sphere);
     }
+    Cue *cue = new Cue(balls, engine.camera, shaderProgram);
+    engine.AddObject(cue);
 
     GameManager *gameManager = new GameManager(balls);
 
