@@ -4,9 +4,6 @@
 #include "logger.hpp"
 #include "engine.hpp"
 
-static int SCR_HEIGHT = 600;
-static int SCR_WIDTH = 800;
-
 const char *vertexShaderSource = "/vertex/standart.vshader";
 const char *fragmentShaderSource = "/fragment/standart.fshader";
 
@@ -18,7 +15,7 @@ class MovingBall : public Object {
  public:
     Vec3 velocity;
     float bounciness = 1;
-    float friction = 1;
+    float friction = 2;
 
     void Update(float dt) override {
         transform->Translate(velocity * dt);
@@ -68,7 +65,7 @@ class Cue : public Object {
      Cue(std::vector<MovingBall *> objects, Camera *camera, ShaderProgram *shader) {
         m_Objects = objects;
         m_Camera = camera;
-        float m_CueDistance = 8.f;
+        m_CueDistance = 3.f;
         renderData = new RenderData();
         renderData->model = Model::loadFromFile("/cue.obj");
         renderData->model->shader = shader;
@@ -101,7 +98,7 @@ class Cue : public Object {
             if (m_CurrentTarget != nullptr) {
                 Vec3 direction = m_CurrentTarget->transform->GetTranslation() - transform->GetTranslation();
                 direction.y = 0;
-                m_CurrentTarget->velocity += 20.f * direction;
+                m_CurrentTarget->velocity += 10.f * direction;
             }
 
             if (m_CurrentTarget == nullptr && target != nullptr)
@@ -187,7 +184,7 @@ MovingBall *newBall(Vec3 position, Vec3 velocity,
 void initLight(Engine& engine);
 
 int main() {
-    auto engine = Engine(SCR_WIDTH, SCR_HEIGHT);
+    auto engine = Engine();
 
     Shader vShader = Shader(VertexShader, vertexShaderSource);
     Shader fShader = Shader(FragmentShader, fragmentShaderSource);
@@ -211,7 +208,7 @@ int main() {
 
     engine.AddObject(gameManager);
 
-    engine.Run(SCR_WIDTH, SCR_HEIGHT);
+    engine.Run();
 }
 
 MovingBall *newBall(Vec3 position, Vec3 velocity,
