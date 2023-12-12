@@ -18,23 +18,24 @@ class MovingBall : public Object {
  public:
     Vec3 velocity;
     float bounciness = 1;
-    float friction = 0;
+    float friction = 1;
 
     void Update(float dt) override {
         transform->Translate(velocity * dt);
         Vec3 rotationAxis = cross(normalize(velocity), Vec3(0, -1, 0));
         float angle = length(velocity) * dt / transform->GetScale().x;
-        Mat4 rotation = transform->GetRotation();
-        transform->Rotate(inverse(rotation));
-        transform->Rotate(angle, rotationAxis);
-        transform->Rotate(rotation);
-        velocity *= pow(1 - friction, dt);
         if (length(velocity) < MIN_VELOCITY) {
             velocity = Vec3(0, 0, 0);
         } else {
+            Mat4 rotation = transform->GetRotation();
+            transform->Rotate(inverse(rotation));
+            transform->Rotate(angle, rotationAxis);
+            transform->Rotate(rotation);
             // Can be dangerous
             velocity -= glm::normalize(velocity) * friction * dt;
         }
+        Vec3 pos = transform->GetTranslation();
+        Logger::Info("%f %f %f", pos.x, pos.y, pos.z);
     }
 
     MovingBall(Vec3 position, ShaderProgram * shaderProgram,
@@ -102,7 +103,7 @@ class Cue : public Object {
             if (m_CurrentTarget != nullptr) {
                 Vec3 direction = m_CurrentTarget->transform->GetTranslation() - transform->GetTranslation();
                 direction.y = 0;
-                m_CurrentTarget->velocity += 2.f * direction;
+                m_CurrentTarget->velocity += 20.f * direction;
             }
 
             if (m_CurrentTarget == nullptr && target != nullptr)
@@ -126,7 +127,7 @@ class Cue : public Object {
      }
 
  private:
-    float m_CueDistance = 1.f;
+    float m_CueDistance;
     MovingBall *m_CurrentTarget = nullptr;
     std::vector<MovingBall *> m_Objects;
     Camera *m_Camera;
