@@ -99,7 +99,8 @@ class Cue : public Object {
             if (m_CurrentTarget != nullptr) {
                 Vec3 direction = m_CurrentTarget->transform->GetTranslation() - transform->GetTranslation();
                 direction.y = 0;
-                m_CurrentTarget->velocity += 10.f * direction;
+                m_CurrentTarget->velocity += 6.f * direction;
+                m_CurrentTarget = nullptr;
             }
 
             if (m_CurrentTarget == nullptr && target != nullptr)
@@ -119,6 +120,9 @@ class Cue : public Object {
             Vec3 toCenter = center - onCircle;
             float angle = glm::acos(glm::dot(toCenter, ray.direction) / m_CueDistance);
             transform->SetRotation(-glm::pi<float>()/2, glm::cross(Vec3{0.f, 1.f, 0.f}, toCenter));
+        } else {
+            transform->SetRotation(glm::pi<float>(), Vec3(1.f, 0.f, 0.f));
+            transform->SetTranslation(m_Camera->GetPosition() + Vec3{0.5f, -0.5f, -0.5f});
         }
      }
 
