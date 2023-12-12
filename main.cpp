@@ -31,6 +31,9 @@ class MovingBall : public Object {
         velocity *= pow(1 - friction, dt);
         if (length(velocity) < MIN_VELOCITY) {
             velocity = Vec3(0, 0, 0);
+        } else {
+            // Can be dangerous
+            velocity -= glm::normalize(velocity) * friction * dt;
         }
     }
 
