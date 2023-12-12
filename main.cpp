@@ -18,7 +18,7 @@ class MovingBall : public Object {
  public:
     Vec3 velocity;
     float bounciness = 1;
-    float friction = 1;
+    float friction = 4;
 
     void Update(float dt) override {
         transform->Translate(velocity * dt);
@@ -36,7 +36,7 @@ class MovingBall : public Object {
         }
     }
 
-    MovingBall(Vec3 position, ShaderProgram * shaderProgram,
+    MovingBall(Vec3 position, float radius, ShaderProgram * shaderProgram,
      std::string diffuseSource, std::string specularSource = "") {
         this->renderData = new RenderData();
         this->renderData->model = Model::loadFromFile("/shar_152.obj");  // Model::GetSphere();
@@ -56,10 +56,10 @@ class MovingBall : public Object {
 
         this->collider = new Collider{Sphere{
             Vec3(0.0),
-            1.0f,
+            radius,
         }};
 
-        transform = new Transform(position, Vec3(1., 1., 1.), Mat4(1.0));
+        transform = new Transform(position, Vec3(radius), Mat4(1.0));
     }
 };
 
@@ -86,7 +86,8 @@ class Cue : public Object {
      }
 
     void Update(float dt) override {
-        Ray ray = Ray(m_Camera->GetPosition(), m_Camera->GetPosition() + m_Camera->GetFront());// m_Camera->GetRayThroughScreenPoint({s_Input->MouseX(), s_Input->MouseY()});;
+        Ray ray = Ray(m_Camera->GetPosition(), m_Camera->GetPosition() + m_Camera->GetFront());
+        // m_Camera->GetRayThroughScreenPoint({s_Input->MouseX(), s_Input->MouseY()});;
         MovingBall *target = nullptr;
         float closest = std::numeric_limits<float>::max();
         for (int i = 0; i < m_Objects.size(); i++) {
@@ -101,7 +102,7 @@ class Cue : public Object {
             if (m_CurrentTarget != nullptr) {
                 Vec3 direction = m_CurrentTarget->transform->GetTranslation() - transform->GetTranslation();
                 direction.y = 0;
-                m_CurrentTarget->velocity += 20.f * direction;
+                m_CurrentTarget->velocity += 2.f * direction;
             }
 
             if (m_CurrentTarget == nullptr && target != nullptr)
@@ -125,7 +126,7 @@ class Cue : public Object {
      }
 
  private:
-    float m_CueDistance;
+    float m_CueDistance = 1.f;
     MovingBall *m_CurrentTarget = nullptr;
     std::vector<MovingBall *> m_Objects;
     Camera *m_Camera;
@@ -135,26 +136,34 @@ class Cue : public Object {
 class GameManager : public Object {
  public:
     std::vector<MovingBall*> balls;
-    float minX = -7, maxX = 7, minZ = -7, maxZ = 7;
+    float minX = -10, maxX = 10, minZ = -10, maxZ = 10;
+
+    void SetBorders(float minX, float maxX, float minZ, float maxZ) {
+        this->minX = minX;
+        this->maxX = maxX;
+        this->minZ = minZ;
+        this->maxZ = maxZ;
+    }
 
     void Update(float dt) override {
         for (int i = 0; i < balls.size(); ++i) {
             auto ball = balls[i];
             Vec3 pos = ball->transform->GetTranslation();
-            if (pos.x < minX) {
-                ball->transform->Translate((1 + ball->bounciness) * Vec3(minX - pos.x, 0, 0));
+            float r = ball->transform->GetScale().x;
+            if (pos.x - r < minX) {
+                ball->transform->Translate((1 + ball->bounciness) * Vec3(minX - pos.x + r, 0, 0));
                 ball->velocity = Vec3(- ball->velocity.x, 0, ball->velocity.z) * ball->bounciness;
             }
-            if (pos.x > maxX) {
-                ball->transform->Translate((1 + ball->bounciness) * Vec3(maxX - pos.x, 0, 0));
+            if (pos.x + r > maxX) {
+                ball->transform->Translate((1 + ball->bounciness) * Vec3(maxX - pos.x - r, 0, 0));
                 ball->velocity = Vec3(- ball->velocity.x, 0, ball->velocity.z) * ball->bounciness;
             }
-            if (pos.z < minZ) {
-                ball->transform->Translate((1 + ball->bounciness) * Vec3(0, 0, minZ - pos.z));
+            if (pos.z - r < minZ) {
+                ball->transform->Translate((1 + ball->bounciness) * Vec3(0, 0, minZ - pos.z + r));
                 ball->velocity = Vec3(ball->velocity.x, 0, - ball->velocity.z) * ball->bounciness;
             }
-            if (pos.z > maxZ) {
-                ball->transform->Translate((1 + ball->bounciness) * Vec3(0, 0, maxZ - pos.z));
+            if (pos.z + r > maxZ) {
+                ball->transform->Translate((1 + ball->bounciness) * Vec3(0, 0, maxZ - pos.z - r));
                 ball->velocity = Vec3(ball->velocity.x, 0, - ball->velocity.z) * ball->bounciness;
             }
             for (int j = i + 1; j < balls.size(); ++j) {
@@ -170,8 +179,8 @@ class GameManager : public Object {
                     Vec3 impulseChange = normalize(v) * proj * (1 + ball->bounciness * ball2->bounciness);
                     ball->velocity -= impulseChange * 0.5f;
                     ball2->velocity += impulseChange * 0.5f;
-                    ball->transform->Translate(v * (ball->transform->GetScale().x / length(v) - 1));
-                    ball2->transform->Translate(v * (1 - ball2->transform->GetScale().x / length(v)));
+                    ball->transform->Translate(v * (r / length(v) - 1));
+                    ball2->transform->Translate(v * (1 - r / length(v)));  // r2 == r
                 }
             }
         }
@@ -181,7 +190,27 @@ class GameManager : public Object {
     }
 };
 
-MovingBall *newBall(Vec3 position, Vec3 velocity,
+class Table : public Object {
+ public:
+    explicit Table(Vec3 position, Vec3 scale, ShaderProgram *shaderProgram) {
+        this->renderData = new RenderData();
+        this->renderData->model = Model::loadFromFile("/stol_1.obj");
+        this->renderData->model->shader = shaderProgram;
+
+        auto images = std::vector<std::string>();
+        images.push_back("/stol.png");
+        this->renderData->material = {
+            4.f,
+            Texture(images),
+        };
+
+        bindRenderData(this->renderData);
+
+        transform = new Transform(position, scale, Mat4(1.0));
+    }
+};
+
+MovingBall *newBall(Vec3 position, Vec3 velocity, float radius,
         ShaderProgram *sp, std::string diffuseSource, std::string specularSource);
 
 void initLight(Engine& engine);
@@ -197,9 +226,10 @@ int main() {
 
     std::vector<MovingBall*> balls;
     int ballsCount = 5;
+    float ballRadius = 0.3f;
 
     for (int i = 0; i < ballsCount; ++i) {
-        MovingBall *sphere = newBall(Vec3(i * 2 - 5, -12, -i), Vec3(3, 0, 1 + i),
+        MovingBall *sphere = newBall(Vec3(i * 2 - 5, -8, -i), Vec3(3, 0, 1 + i), ballRadius,
          shaderProgram, "/152.png", "/Cat_specular.png");
         balls.push_back(sphere);
         engine.AddObject<>(sphere);
@@ -208,15 +238,22 @@ int main() {
     engine.AddObject(cue);
 
     GameManager *gameManager = new GameManager(balls);
+    gameManager->SetBorders(-7.2, 7.2, -3.6, 3.6);
 
     engine.AddObject(gameManager);
+
+    Vec3 tablePosition = Vec3(0, -15.04, 0);
+    Vec3 tableScale = Vec3(8, 8, 8);
+    Table *table = new Table(tablePosition, tableScale, shaderProgram);
+
+    engine.AddObject(table);
 
     engine.Run(SCR_WIDTH, SCR_HEIGHT);
 }
 
-MovingBall *newBall(Vec3 position, Vec3 velocity,
+MovingBall *newBall(Vec3 position, Vec3 velocity, float radius,
         ShaderProgram *sp, std::string diffuseSource, std::string specularSource) {
-    MovingBall* ball = new MovingBall(position, sp, diffuseSource, specularSource);
+    MovingBall* ball = new MovingBall(position, radius, sp, diffuseSource, specularSource);
     ball->velocity = velocity;
     return ball;
 }
@@ -225,7 +262,7 @@ void initLight(Engine& engine) {
     // init light objects
     Object* pointLight1 = new Object();
     pointLight1->light = new PointLight(
-        Vec3(0.2f, 0.2f, 0.2f), Vec3(0.5f, 0.5f, 0.5f),
+        Vec3(0.2f, 0.2f, 0.2f), Vec3(0.8f, 0.8f, 0.8f),
         Vec3(1.0f, 1.0f, 1.0f), Vec3(-0.2, -0.5, -1.2),
         1, 0.09f, 0.032f);
     auto pointLight = std::get<PointLight*>(pointLight1->light);
@@ -233,7 +270,7 @@ void initLight(Engine& engine) {
 
     Object* pointLight2 = new Object();
     pointLight2->light = new PointLight(
-        Vec3(0.2f, 0.2f, 0.2f), Vec3(0.5f, 0.5f, 0.5f),
+        Vec3(0.2f, 0.2f, 0.2f), Vec3(0.8f, 0.8f, 0.8f),
         Vec3(1.0f, 1.0f, 1.0f), Vec3(2.3f, -3.3f, -4.0f),
         1, 0.09f, 0.032f);
     pointLight = std::get<PointLight*>(pointLight2->light);
@@ -241,7 +278,7 @@ void initLight(Engine& engine) {
 
     Object* pointLight3 = new Object();
     pointLight3->light = new PointLight(
-        Vec3(0.2f, 0.2f, 0.2f), Vec3(0.5f, 0.5f, 0.5f),
+        Vec3(0.2f, 0.2f, 0.2f), Vec3(0.8f, 0.8f, 0.8f),
         Vec3(1.0f, 1.0f, 1.0f), Vec3(0.0f,  0.0f, -3.0f),
         1, 0.09f, 0.032f);
     pointLight = std::get<PointLight*>(pointLight3->light);
