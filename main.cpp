@@ -65,7 +65,8 @@ class Cue : public Object {
      Cue(std::vector<MovingBall *> objects, Camera *camera, ShaderProgram *shader) {
         m_Objects = objects;
         m_Camera = camera;
-        m_CueDistance = 3.f;
+        m_CueDistance = 1.f;
+        m_AttackVelocity = 10.f;
         renderData = new RenderData();
         renderData->model = Model::loadFromFile("/cue.obj");
         renderData->model->shader = shader;
@@ -80,11 +81,13 @@ class Cue : public Object {
             4.f,
             Texture(imagesCue),
         };
+
+        animation = new Animation();
+        m_Attacking = false;
      }
 
     void Update(float dt) override {
         Ray ray = Ray(m_Camera->GetPosition(), m_Camera->GetPosition() + m_Camera->GetFront());
-        // m_Camera->GetRayThroughScreenPoint({s_Input->MouseX(), s_Input->MouseY()});;
         MovingBall *target = nullptr;
         float closest = std::numeric_limits<float>::max();
         for (int i = 0; i < m_Objects.size(); i++) {
@@ -95,20 +98,35 @@ class Cue : public Object {
                 closest = *hit;
             }
         }
+
         if (s_Input->IsKeyPressed(Key::MouseLeft)) {
             if (m_CurrentTarget != nullptr) {
-                Vec3 direction = m_CurrentTarget->transform->GetTranslation() - transform->GetTranslation();
-                direction.y = 0;
-                m_CurrentTarget->velocity += 6.f * direction;
-                m_CurrentTarget = nullptr;
+                m_Attacking = true;
+                Transform nextPos = *transform;
+                Vec3 direction = glm::normalize(m_CurrentTarget->transform->GetTranslation() - transform->GetTranslation());
+                nextPos.Translate(0.8f * direction);
+                animation->addAnimation(nextPos, .15f);
             }
 
             if (m_CurrentTarget == nullptr && target != nullptr)
                 m_CurrentTarget = target;
         }
 
+        if (animation->isComplete()) {
+            if (m_Attacking) {
+                Vec3 direction = glm::normalize(m_CurrentTarget->transform->GetTranslation() - transform->GetTranslation());
+                direction.y = 0.f;
+                m_CurrentTarget->velocity += m_AttackVelocity * direction;
+                m_CurrentTarget = nullptr;
+            }
+            m_Attacking = false;
+        }
+
         if (s_Input->IsKeyPressed(Key::MouseRight))
             m_CurrentTarget = nullptr;
+
+        if (m_Attacking)
+            return;
 
         if (m_CurrentTarget != nullptr) {
             Vec3 center = m_CurrentTarget->transform->GetTranslation();
@@ -119,7 +137,7 @@ class Cue : public Object {
 
             Vec3 toCenter = center - onCircle;
             float angle = glm::acos(glm::dot(toCenter, ray.direction) / m_CueDistance);
-            transform->SetRotation(-glm::pi<float>()/2, glm::cross(Vec3{0.f, 1.f, 0.f}, toCenter));
+            transform->SetRotation(-glm::pi<float>()/2 + 0.06, glm::cross(Vec3{0.f, 1.f, 0.f}, toCenter));
         } else {
             transform->SetRotation(glm::pi<float>(), Vec3(1.f, 0.f, 0.f));
             transform->SetTranslation(m_Camera->GetPosition() + Vec3{0.5f, -0.5f, -0.5f});
@@ -127,7 +145,9 @@ class Cue : public Object {
      }
 
  private:
-    float m_CueDistance = 1.f;
+    bool m_Attacking;
+    float m_CueDistance;
+    float m_AttackVelocity;
     MovingBall *m_CurrentTarget = nullptr;
     std::vector<MovingBall *> m_Objects;
     Camera *m_Camera;
