@@ -34,8 +34,6 @@ class MovingBall : public Object {
             // Can be dangerous
             velocity -= glm::normalize(velocity) * friction * dt;
         }
-        Vec3 pos = transform->GetTranslation();
-        Logger::Info("%f %f %f", pos.x, pos.y, pos.z);
     }
 
     MovingBall(Vec3 position, ShaderProgram * shaderProgram,
