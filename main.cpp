@@ -332,7 +332,7 @@ int main() {
         char buf[15];
         snprintf(buf, sizeof(buf), "/%d.png", i + 1);
         MovingBall *sphere = newBall(coordinates[i], Vec3(0, 0, 0), ballRadius,
-         shaderProgram, buf, buf);
+         shaderProgram, buf, "/Cat_specular.png");
         balls.push_back(sphere);
         engine.AddObject<>(sphere);
     }
