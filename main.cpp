@@ -15,7 +15,7 @@ class MovingBall : public Object {
  public:
     Vec3 velocity;
     float bounciness = 1;
-    float friction = 2;
+    float friction = 4;
 
     void Update(float dt) override {
         transform->Translate(velocity * dt);
@@ -178,6 +178,16 @@ class GameManager : public Object {
     }
 };
 
+class FpsText : public Object {
+ public:
+    void Update(float dt) override {
+        int fps = Time::GetCurrentFps();
+        char buf[12];
+        snprintf(buf, sizeof(buf), "Fps: %d", fps);
+        this->text->SetContent(buf);
+    }
+};
+
 MovingBall *newBall(Vec3 position, Vec3 velocity,
         ShaderProgram *sp, std::string diffuseSource, std::string specularSource);
 
@@ -203,6 +213,18 @@ int main() {
     }
     Cue *cue = new Cue(balls, engine.camera, shaderProgram);
     engine.AddObject(cue);
+
+    /* Fps counter */
+    auto textOcra = new Font("OCRAEXT.TTF", 20);
+    auto fpsObj = new FpsText();
+    fpsObj->text = new Text(textOcra, "", 685.0f, 575.0f, 1.f, Vec3(0, 0, 0));
+    engine.AddObject<>(fpsObj);;
+
+    /* Pointer */
+    auto pointer = new Object();
+    auto textOcraBig = new Font("OCRAEXT.TTF", 40);
+    pointer->text = new Text(textOcraBig, "+", SCR_WIDTH/2.f - 10, SCR_HEIGHT/2.f - 10, 1.f, Vec3(0, 0, 0));
+    engine.AddObject<>(pointer);
 
     GameManager *gameManager = new GameManager(balls);
 
