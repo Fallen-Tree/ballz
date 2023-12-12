@@ -305,6 +305,7 @@ int main() {
     initLight(engine);
 
     float ballRadius = 0.3f;
+    float Y = -8; 
     std::vector<MovingBall*> balls;
 
     std::vector<Vec3> coordinates;
@@ -338,7 +339,7 @@ int main() {
     }
 
     std::vector<Hole*> holes;
-    float holeRadius = 0.2f;
+    float holeRadius = 0.1f;
     float borderX = 7.17f;
     float borderZ = 3.59f;
     float holeX = borderX - 0.25f;
