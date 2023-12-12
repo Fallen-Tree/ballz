@@ -38,7 +38,7 @@ class MovingBall : public Object {
     MovingBall(Vec3 position, float radius, ShaderProgram * shaderProgram,
      std::string diffuseSource, std::string specularSource = "") {
         this->renderData = new RenderData();
-        this->renderData->model = Model::loadFromFile("/shar_152.obj");  // Model::GetSphere();
+        this->renderData->model = Model::loadFromFile("/shar_1200.obj");  // Model::GetSphere();
         this->renderData->model->shader = shaderProgram;
 
         auto images = std::vector<std::string>();
@@ -304,14 +304,35 @@ int main() {
 
     initLight(engine);
 
-    std::vector<MovingBall*> balls;
-    int ballsCount = 5;
     float ballRadius = 0.3f;
-    float Y = -8;
+    std::vector<MovingBall*> balls;
 
-    for (int i = 0; i < ballsCount; ++i) {
-        MovingBall *sphere = newBall(Vec3(i * 2 - 5, Y, -i), Vec3(3, 0, 1 + i), ballRadius,
-         shaderProgram, "/152.png", "/Cat_specular.png");
+    std::vector<Vec3> coordinates;
+    coordinates.push_back(Vec3(-2, -8, -0.2f));
+    coordinates.push_back(Vec3(-2.5f, -8, -0.5f));
+    coordinates.push_back(Vec3(-2.5f, -8, 0.1f));
+    coordinates.push_back(Vec3(-3.f, -8, -0.8f));
+    coordinates.push_back(Vec3(-3.f, -8, -0.2f));
+    coordinates.push_back(Vec3(-3.f, -8, 0.4f));
+    coordinates.push_back(Vec3(-3.5f, -8, -1.1f));
+    coordinates.push_back(Vec3(-3.5f, -8, -0.5f));
+    coordinates.push_back(Vec3(-3.5f, -8, 0.1f));
+    coordinates.push_back(Vec3(-3.5f, -8, 0.7f));
+    coordinates.push_back(Vec3(-4, -8, -1.4f));
+    coordinates.push_back(Vec3(-4, -8, -0.8f));
+    coordinates.push_back(Vec3(-4, -8, -0.2f));
+    coordinates.push_back(Vec3(-4, -8, 0.4f));
+    coordinates.push_back(Vec3(-4, -8, 1.f));
+
+    coordinates.push_back(Vec3(2, -8, -0.2f));
+
+    int ballsCount = coordinates.size();
+
+    for (int i = 0; i < ballsCount; i++) {
+        char buf[15];
+        snprintf(buf, sizeof(buf), "/%d.png", i + 1);
+        MovingBall *sphere = newBall(coordinates[i], Vec3(0, 0, 0), ballRadius,
+         shaderProgram, buf, buf);
         balls.push_back(sphere);
         engine.AddObject<>(sphere);
     }
@@ -401,14 +422,4 @@ void initLight(Engine& engine) {
 
     auto directionLight = std::get<DirLight*>(dirLight->light);
     engine.AddObject<>(dirLight);
-
-    Object* spotLight = new Object();
-    spotLight->light = new SpotLight(
-            Vec3(0.0f, 0.0f, 0.0f), Vec3(1.0f, 1.0f, 1.0f),
-            Vec3(1.0f, 1.0f, 1.0f), Vec3(1.0f, 1.0f, 1.0f),
-            1.0f, 0.09f, 0.032f, Vec3(0),
-            glm::cos(glm::radians(12.5f)),
-            glm::cos(glm::radians(15.0f)));
-    auto sptLight = std::get<SpotLight*>(spotLight->light);
-    engine.AddObject<>(spotLight);
 }
