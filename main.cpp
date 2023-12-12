@@ -1,6 +1,9 @@
 #include<math.h>
 #include<iostream>
 
+#include "math_types.hpp"
+
+
 #include "logger.hpp"
 #include "engine.hpp"
 
@@ -92,7 +95,7 @@ class Cue : public Object {
         m_Objects = objects;
         m_Camera = camera;
         m_CueDistance = 1.f;
-        m_AttackVelocity = 10.f;
+        m_AttackVelocity = 12.f;
         renderData = new RenderData();
         renderData->model = Model::loadFromFile("/cue.obj");
         renderData->model->shader = shader;
@@ -333,7 +336,7 @@ int main() {
         char buf[15];
         snprintf(buf, sizeof(buf), "/%d.png", i + 1);
         MovingBall *sphere = newBall(coordinates[i], Vec3(0, 0, 0), ballRadius,
-         shaderProgram, buf, "/Cat_specular.png");
+         shaderProgram, buf, "/specular.png");
         balls.push_back(sphere);
         engine.AddObject<>(sphere);
     }
@@ -379,6 +382,24 @@ int main() {
     Table *table = new Table(tablePosition, tableScale, shaderProgram);
 
     engine.AddObject(table);
+
+    /* CAT */
+    auto cat = new Object();
+    cat->renderData = new RenderData();
+    cat->renderData->model = Model::loadFromFile("/cat.obj");
+    cat->renderData->model->shader = shaderProgram;
+
+    auto images = std::vector<std::string>();
+    images.push_back("/Cat_diffuse.png");
+    images.push_back("/Cat_specular.png");
+    cat->renderData->material = {
+        4.f,
+        Texture(images),
+    };
+    bindRenderData(cat->renderData);
+    cat->transform = new Transform(Vec3(0, -12, -12), Vec3(0.3f), Mat4(1.f));
+    cat->transform->Rotate(glm::radians(-90.f), 0, 0);
+    engine.AddObject<>(cat);
 
     engine.Run();
 }
