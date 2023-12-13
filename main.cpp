@@ -20,7 +20,7 @@ class MovingBall : public Object {
     bool active = true;
     Vec3 velocity;
     float bounciness = 1;
-    float friction = 4;
+    float friction = 2.5;
 
     void Update(float dt) override {
         transform->Translate(velocity * dt);
@@ -151,11 +151,11 @@ class Cue : public Object {
             m_Attacking = false;
         }
 
-        if (s_Input->IsKeyPressed(Key::MouseRight))
-            m_CurrentTarget = nullptr;
-
         if (m_Attacking)
             return;
+
+        if (s_Input->IsKeyPressed(Key::MouseRight))
+            m_CurrentTarget = nullptr;
 
         if (m_CurrentTarget != nullptr) {
             Vec3 center = m_CurrentTarget->transform->GetTranslation();
