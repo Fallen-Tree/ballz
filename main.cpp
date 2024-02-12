@@ -24,15 +24,12 @@ class MovingBall : public Object {
 
     void Update(float dt) override {
         transform->Translate(velocity * dt);
-        Vec3 rotationAxis = cross(normalize(velocity), Vec3(0, -1, 0));
-        float angle = length(velocity) * dt / transform->GetScale().x;
         if (length(velocity) < MIN_VELOCITY) {
             velocity = Vec3(0, 0, 0);
         } else {
-            Mat4 rotation = transform->GetRotation();
-            transform->Rotate(inverse(rotation));
-            transform->Rotate(angle, rotationAxis);
-            transform->Rotate(rotation);
+            Vec3 rotationAxis = cross(normalize(velocity), Vec3(0, -1, 0));
+            float angle = length(velocity) * dt / transform->GetScale().x;
+            transform->RotateGlobal(angle, rotationAxis);
             // Can be dangerous
             velocity -= glm::normalize(velocity) * friction * dt;
         }
